@@ -1,48 +1,37 @@
-"use client";
+import Confete from "./confete";
 
-import { useEffect } from "react";
-
-const nomes = ["DODÔ", "FITA", "MENDOZA", "DÉDA", "BIGÃO"];
-
-// Nomes comuns de vozes femininas pt-BR nos navegadores/sistemas
-const nomesFemininos =
-  /luciana|francisca|maria|vitoria|vitória|thalita|leticia|letícia|raquel|female|feminin|google português/i;
-const nomesMasculinos = /antonio|antônio|daniel|felipe|male|masculin/i;
-
-function escolherVoz() {
-  const ptBR = speechSynthesis
-    .getVoices()
-    .filter((v) => v.lang.replace("_", "-").toLowerCase() === "pt-br");
-  return (
-    ptBR.find((v) => nomesFemininos.test(v.name)) ||
-    ptBR.find((v) => !nomesMasculinos.test(v.name)) ||
-    ptBR[0] ||
-    null
-  );
+async function buscarTotalDeConteudos() {
+  try {
+    const resposta = await fetch(
+      "https://www.tabnews.com.br/api/v1/contents?per_page=1&strategy=new",
+      { cache: "no-store" },
+    );
+    if (!resposta.ok) return null;
+    const total = Number(resposta.headers.get("x-pagination-total-rows"));
+    return Number.isFinite(total) ? total : null;
+  } catch {
+    return null;
+  }
 }
 
-function falar(texto) {
-  speechSynthesis.cancel();
-  const fala = new SpeechSynthesisUtterance(texto);
-  fala.lang = "pt-BR";
-  const voz = escolherVoz();
-  if (voz) fala.voice = voz;
-  speechSynthesis.speak(fala);
-}
-
-export default function Home() {
-  // Algumas vozes só carregam depois da primeira chamada
-  useEffect(() => {
-    speechSynthesis.getVoices();
-  }, []);
+export default async function Home() {
+  const total = await buscarTotalDeConteudos();
 
   return (
-    <ul>
-      {nomes.map((nome) => (
-        <li key={nome} onClick={() => falar(nome.toLowerCase())}>
-          {nome}
-        </li>
-      ))}
-    </ul>
+    <main>
+      <Confete />
+      <h1>Em construção</h1>
+      <p>
+        Estamos neste exato momento reconstruindo o TabNews, um lugar na
+        internet para quem trabalha com tecnologia e precisa consumir conteúdos
+        com valor concreto.
+      </p>
+      <p className="total">
+        {total === null
+          ? "Não foi possível carregar o total de conteúdos publicados."
+          : `${total.toLocaleString("pt-BR")} conteúdos publicados no TabNews`}
+      </p>
+      <a href="https://www.tabnews.com.br">Acesse o TabNews oficial</a>
+    </main>
   );
 }
